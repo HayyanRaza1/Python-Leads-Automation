@@ -3,7 +3,7 @@ from config import API_KEY, CSE_ID
 
 SEARCH_URL = "https://www.googleapis.com/customsearch/v1"
 
-def search_companies(query, num_results=20):
+def search_companies(query, num_results=10):
     """Searches companies using Google Custom Search API."""
     params = {
         "q": query,
