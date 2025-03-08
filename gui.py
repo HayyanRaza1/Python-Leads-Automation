@@ -7,24 +7,26 @@ import time
 from search import search_companies
 from sheets import save_to_google_sheets
 
-# UI Initialization
+# UI Initialization with Darkly Theme
 root = tb.Window(themename="darkly")
 root.title("Company Search Tool")
 root.state("zoomed")
-root.configure(bg="#181818")
+root.configure(bg="#222222")
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
 
 # Layout Setup
-frame = tk.Frame(root, padx=30, pady=30, bg="#181818")
+frame = tk.Frame(root, padx=30, pady=30, bg="#222222")
 frame.grid(row=0, column=0, sticky="nsew")
 frame.columnconfigure(0, weight=1)
 frame.rowconfigure(1, weight=1)
 
 # Search Bar
-search_frame = tk.Frame(frame, bg="#181818")
+search_frame = tk.Frame(frame, bg="#222222")
 search_frame.grid(row=0, column=0, sticky="ew", pady=10)
 search_frame.columnconfigure(1, weight=1)
 
-tb.Label(search_frame, text="Enter Search Query:", font=("Arial", 14), background="#181818", foreground="white").grid(row=0, column=0, padx=10)
+tb.Label(search_frame, text="Enter Search Query:", font=("Arial", 14), background="#222222", foreground="white").grid(row=0, column=0, padx=10)
 search_entry = tb.Entry(search_frame, font=("Arial", 14), bootstyle="dark")
 search_entry.grid(row=0, column=1, padx=10, sticky="ew")
 
@@ -34,47 +36,50 @@ search_button.grid(row=0, column=2, padx=10)
 save_button = tb.Button(search_frame, text="Save to Google Sheets", command=lambda: save_results(), bootstyle="primary-outline", padding=10)
 save_button.grid(row=0, column=3, padx=10)
 
-# Table Setup (Full Screen)
+# Table Setup (Expands to Full Screen)
 columns = ("Company Name", "Website", "Description")
-table = ttk.Treeview(frame, columns=columns, show="headings", style="dark.Treeview")
+table = ttk.Treeview(frame, columns=columns, show="headings", style="darkly.Treeview")
 table.grid(row=1, column=0, sticky="nsew")
+
+frame.rowconfigure(1, weight=1)
+frame.columnconfigure(0, weight=1)
 
 for col in columns:
     table.heading(col, text=col)
-    table.column(col, anchor="center")
+    table.column(col, anchor="center", stretch=True)
 
-# **New Dynamic Status Bar**
-status_bar = tb.Label(root, text="Ready", font=("Arial", 12), anchor="w", bootstyle="dark-inverse")
-status_bar.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
+# **Status Bar with Emoji Spinner**
+status_frame = tk.Frame(root, bg="#222222")
+status_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
+status_frame.columnconfigure(0, weight=1)
 
-# Spinner Animation
-spinner_label = tb.Label(root, text="⏳", font=("Arial", 20), background="#181818", foreground="white")
-spinner_active = False
+status_bar = tb.Label(status_frame, text="Ready", font=("Arial", 12), anchor="w", bootstyle="dark-inverse")
+status_bar.grid(row=0, column=0, sticky="w")
+
+spinner_label = tb.Label(status_frame, text="", font=("Arial", 14), background="#222222", foreground="white")
+spinner_label.grid(row=0, column=1, sticky="e", padx=10)
 
 def update_status(message):
-    """Update the status bar with a given message."""
+    """Update the status bar message."""
     status_bar.config(text=message)
 
 def start_spinner():
-    """Starts the spinner animation."""
-    global spinner_active
-    spinner_active = True
-    spinner_label.grid(row=3, column=0, sticky="e", padx=20, pady=5)
-
+    """Starts the emoji spinner animation."""
     def animate():
-        spin_chars = ["⏳", "🔄", "⌛", "🔁"]
-        while spinner_active:
-            for char in spin_chars:
-                spinner_label.config(text=char)
-                time.sleep(0.2)
+        emojis = ["⏳", "🔄", "⌛", "🔁"]
+        i = 0
+        while spinner_label.running:
+            spinner_label.config(text=emojis[i % len(emojis)])
+            i += 1
+            time.sleep(0.3)
     
+    spinner_label.running = True
     threading.Thread(target=animate, daemon=True).start()
 
 def stop_spinner():
-    """Stops the spinner animation."""
-    global spinner_active
-    spinner_active = False
-    spinner_label.grid_remove()
+    """Stops the emoji spinner animation."""
+    spinner_label.running = False
+    spinner_label.config(text="")
 
 def start_search():
     """Handles the search operation in a separate thread."""
@@ -91,7 +96,7 @@ def start_search():
         try:
             results = search_companies(query)
             display_results(results)
-            update_status("Search Completed")
+            update_status("Search Completed ✅")
         except Exception as e:
             update_status(f"Error: {str(e)}")
 
